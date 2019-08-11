@@ -1,1 +1,1 @@
-# irpul.ir freer payment module
+# irpul.ir freer payment Plugin
