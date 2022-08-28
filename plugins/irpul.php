@@ -137,46 +137,19 @@
 		return $res;
 	}
 
-	
-	function url_decrypt($string){
-		$counter = 0;
-		$data = str_replace(array('-','_','.'),array('+','/','='),$string);
-		$mod4 = strlen($data) % 4;
-		if ($mod4) {
-			$data .= substr('====', $mod4);
-		}
-		$decrypted = base64_decode($data);
-		
-		$check = array('trans_id','order_id','amount','refcode','status');
-		foreach($check as $str){
-			str_replace($str,'',$decrypted,$count);
-			if($count > 0){
-				$counter++;
-			}
-		}
-		if($counter === 5){
-			return array('data'=>$decrypted , 'status'=>true);
-		}else{
-			return array('data'=>'' , 'status'=>false);
-		}
-	}
-	
 	//-- تابع بررسی وضعیت پرداخت
 	function callback__irpul($data){
 		global $db,$post,$_POST,$_GET;
 		$token = $data['token'];
 		
-		$resCode 	= $_POST['ResCode'];
+		//$resCode 	= $_POST['ResCode'];
 		
-		$irpul_token 	= $_GET['irpul_token'];
-		$decrypted 		= url_decrypt( $irpul_token );
-		if($decrypted['status']){
-			parse_str($decrypted['data'], $ir_output);
-			$trans_id 	= $ir_output['trans_id'];
-			$order_id 	= $ir_output['order_id'];
-			$amount 	= $ir_output['amount'];
-			$refcode	= $ir_output['refcode'];
-			$status 	= $ir_output['status'];
+		if( isset($_POST['trans_id']) && isset($_POST['order_id']) && isset($_POST['amount']) && isset($_POST['refcode']) && isset($_POST['status']) ){
+			$trans_id	= $_POST['trans_id'];
+			$order_id 	= $_POST['order_id'];
+			$amount 	= $_POST['amount'];
+			$ref_code 	= $_POST['refcode'];
+			$status 	= $_POST['status'];
 			
 			if($status == 'paid'){
 				$payment 		= $db->fetch("SELECT * FROM payment WHERE payment_rand='$order_id' LIMIT 1;");
@@ -197,11 +170,18 @@
 						$data =  json_decode($result['data'],true);
 
 						if( isset($data['code']) && $data['code'] === 1){
-							//-- آماده کردن خروجی
-							$output[status]		= 1;
-							$output[res_num]	= $trans_id;
-							$output[ref_num]	= $refcode;
-							$output[payment_id]	= $payment_id;
+							$irpul_amount  = $data['amount'];
+							
+							if($amount == $irpul_amount){
+								//-- آماده کردن خروجی
+								$output[status]		= 1;
+								$output[res_num]	= $trans_id;
+								$output[ref_num]	= $refcode;
+								$output[payment_id]	= $payment_id;
+							}
+							else{
+								$error_msg ='مبلغ تراکنش در ایرپول (' . number_format($irpul_amount) . ' تومان) تومان با مبلغ تراکنش در سیمانت (' . number_format($amount) . ' تومان) برابر نیست';
+							}
 						}
 						else{
 							$output[status]		= 0;
@@ -222,6 +202,10 @@
 				$output[status]	= 0;
 				$output[message]= 'پرداخت با موفقيت انجام نشده است.';
 			}
+		}
+		else{
+			$output[status]	= 0;
+			$output[message]=  "undefined callback parameters";
 		}
 		return $output;
 	}
