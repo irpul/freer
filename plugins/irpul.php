@@ -180,7 +180,8 @@
 								$output[payment_id]	= $payment_id;
 							}
 							else{
-								$error_msg ='مبلغ تراکنش در ایرپول (' . number_format($irpul_amount) . ' تومان) تومان با مبلغ تراکنش در سیمانت (' . number_format($amount) . ' تومان) برابر نیست';
+								$output[status]		= 0;
+								$output[message]	= 'مبلغ تراکنش در ایرپول (' . number_format($irpul_amount) . ' تومان) تومان با مبلغ تراکنش در سیمانت (' . number_format($amount) . ' تومان) برابر نیست';
 							}
 						}
 						else{
